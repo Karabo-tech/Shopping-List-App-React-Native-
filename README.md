@@ -1,5 +1,8 @@
 # Shopping List App - Complete Documentation
 
+## Live APK
+[Download APK from Google Drive](https://drive.google.com/file/d/1DRpoGGz98WpwTMe4Nh225qumujk7LLbO/view?usp=drive_link)
+
 ## 📋 Table of Contents
 - [Overview](#overview)
 - [Features](#features)
@@ -63,7 +66,7 @@ The Shopping List App is a full-featured React Native application built with Exp
 
 ### Step 1: Clone or Navigate to Project Directory
 ```bash
-cd your-project-directory
+cd Shopping-List-App
 ```
 
 ### Step 2: Install Dependencies
