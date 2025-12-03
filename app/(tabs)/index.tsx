@@ -1,98 +1,322 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+/**
+ * Shopping List Screen (Main Screen)
+ * This is the main screen of the application where users can:
+ * - View their shopping list
+ * - Add new items
+ * - Edit existing items
+ * - Delete items
+ * - Mark items as purchased
+ * - View statistics
+ */
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import AddEditItemForm from '@/components/shopping/AddEditItemForm';
+import EmptyState from '@/components/shopping/EmptyState';
+import ShoppingListItem from '@/components/shopping/ShoppingListItem';
+import StatisticsBar from '@/components/shopping/StatisticsBar';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import {
+  addItem,
+  clearAllItems,
+  deleteItem,
+  deletePurchasedItems,
+  editItem,
+  setEditingItem,
+  togglePurchased,
+} from '@/store/slices/shoppingListSlice';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useCallback } from 'react';
+import {
+  Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-export default function HomeScreen() {
+export default function ShoppingListScreen() {
+  const dispatch = useAppDispatch();
+  const { items, editingItemId } = useAppSelector((state) => state.shoppingList);
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  // Calculate statistics
+  const totalItems = items.length;
+  const purchasedItems = items.filter((item) => item.purchased).length;
+
+  // Get the item currently being edited
+  const editingItem = items.find((item) => item.id === editingItemId);
+
+  // Handle adding a new item
+  const handleAddItem = useCallback(
+    (name: string, quantity: number) => {
+      dispatch(addItem({ name, quantity }));
+      Alert.alert('Success', `${name} added to your shopping list!`, [
+        { text: 'OK' },
+      ]);
+    },
+    [dispatch]
+  );
+
+  // Handle editing an item
+  const handleEditItem = useCallback(
+    (name: string, quantity: number) => {
+      if (editingItemId) {
+        dispatch(editItem({ id: editingItemId, name, quantity }));
+        Alert.alert('Success', 'Item updated successfully!', [{ text: 'OK' }]);
+      }
+    },
+    [dispatch, editingItemId]
+  );
+
+  // Handle starting edit mode
+  const handleStartEdit = useCallback(
+    (id: string) => {
+      dispatch(setEditingItem(id));
+    },
+    [dispatch]
+  );
+
+  // Handle canceling edit mode
+  const handleCancelEdit = useCallback(() => {
+    dispatch(setEditingItem(null));
+  }, [dispatch]);
+
+  // Handle deleting an item with confirmation
+  const handleDeleteItem = useCallback(
+    (id: string) => {
+      const item = items.find((i) => i.id === id);
+      Alert.alert(
+        'Delete Item',
+        `Are you sure you want to delete "${item?.name}"?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => {
+              dispatch(deleteItem(id));
+              Alert.alert('Success', 'Item deleted successfully!', [
+                { text: 'OK' },
+              ]);
+            },
+          },
+        ]
+      );
+    },
+    [dispatch, items]
+  );
+
+  // Handle toggling purchased status
+  const handleTogglePurchased = useCallback(
+    (id: string) => {
+      dispatch(togglePurchased(id));
+    },
+    [dispatch]
+  );
+
+  // Handle clearing all items
+  const handleClearAll = useCallback(() => {
+    if (items.length === 0) {
+      Alert.alert('Info', 'Your shopping list is already empty!');
+      return;
+    }
+
+    Alert.alert(
+      'Clear All Items',
+      'Are you sure you want to delete all items from your shopping list?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear All',
+          style: 'destructive',
+          onPress: () => {
+            dispatch(clearAllItems());
+            Alert.alert('Success', 'All items cleared!', [{ text: 'OK' }]);
+          },
+        },
+      ]
+    );
+  }, [dispatch, items.length]);
+
+  // Handle deleting purchased items
+  const handleDeletePurchased = useCallback(() => {
+    const purchasedCount = items.filter((item) => item.purchased).length;
+
+    if (purchasedCount === 0) {
+      Alert.alert('Info', 'No purchased items to delete!');
+      return;
+    }
+
+    Alert.alert(
+      'Delete Purchased Items',
+      `Delete ${purchasedCount} purchased item${purchasedCount > 1 ? 's' : ''}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            dispatch(deletePurchasedItems());
+            Alert.alert('Success', 'Purchased items deleted!', [
+              { text: 'OK' },
+            ]);
+          },
+        },
+      ]
+    );
+  }, [dispatch, items]);
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <View
+      style={[
+        styles.container,
+        isDark ? styles.containerDark : styles.containerLight,
+      ]}
+    >
+      {/* Header */}
+      <View
+        style={[
+          styles.header,
+          isDark ? styles.headerDark : styles.headerLight,
+        ]}
+      >
+        <View style={styles.headerContent}>
+          <Ionicons
+            name="cart"
+            size={32}
+            color={isDark ? '#FFF' : '#4CAF50'}
+          />
+          <Text
+            style={[
+              styles.headerTitle,
+              isDark ? styles.headerTitleDark : styles.headerTitleLight,
+            ]}
+          >
+            Shopping List
+          </Text>
+        </View>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        {/* Action Buttons */}
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={handleDeletePurchased}
+            style={styles.headerButton}
+            accessibilityLabel="Delete purchased items"
+            accessibilityRole="button"
+          >
+            <Ionicons
+              name="checkmark-done"
+              size={24}
+              color={isDark ? '#FFF' : '#4CAF50'}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleClearAll}
+            style={styles.headerButton}
+            accessibilityLabel="Clear all items"
+            accessibilityRole="button"
+          >
+            <Ionicons
+              name="trash-bin"
+              size={24}
+              color={isDark ? '#FFF' : '#F44336'}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Statistics Bar */}
+      {totalItems > 0 && (
+        <StatisticsBar totalItems={totalItems} purchasedItems={purchasedItems} />
+      )}
+
+      {/* Add/Edit Form */}
+      <AddEditItemForm
+        onSubmit={editingItemId ? handleEditItem : handleAddItem}
+        onCancel={handleCancelEdit}
+        editingItem={editingItem}
+        isEditing={!!editingItemId}
+      />
+
+      {/* Shopping List */}
+      {items.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <FlatList
+          data={items}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <ShoppingListItem
+              item={item}
+              onTogglePurchased={handleTogglePurchased}
+              onEdit={handleStartEdit}
+              onDelete={handleDeleteItem}
+            />
+          )}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+  },
+  containerLight: {
+    backgroundColor: '#F5F5F5',
+  },
+  containerDark: {
+    backgroundColor: '#000000',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingTop: 60,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  headerLight: {
+    backgroundColor: '#FFFFFF',
+  },
+  headerDark: {
+    backgroundColor: '#1C1C1E',
+  },
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  headerTitleLight: {
+    color: '#000000',
+  },
+  headerTitleDark: {
+    color: '#FFFFFF',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  headerButton: {
+    padding: 8,
+  },
+  listContent: {
+    paddingVertical: 8,
+    paddingBottom: 20,
   },
 });
