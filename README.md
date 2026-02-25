@@ -466,13 +466,3 @@ Edit `app.json`:
   }
 }
 ```
-
-## 📄 License
-This project is created for educational purposes.
-
-## 👥 Support
-For issues or questions, please refer to the documentation or create an issue in the project repository.
-
----
-
-**Created with ❤️ using React Native, Expo, Redux Toolkit, and TypeScript**
