@@ -1,7 +1,7 @@
 # Shopping List App - Complete Documentation
 
 ## Live APK
-[Download APK from Google Drive](https://drive.google.com/file/d/1DRpoGGz98WpwTMe4Nh225qumujk7LLbO/view?usp=drive_link)
+[Download APK from Google Drive]()
 
 ## 📋 Table of Contents
 - [Overview](#overview)
