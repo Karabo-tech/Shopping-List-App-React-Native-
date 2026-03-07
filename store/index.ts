@@ -5,7 +5,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { configureStore } from '@reduxjs/toolkit';
+import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import { persistReducer, persistStore } from 'redux-persist';
 import shoppingListReducer from './slices/shoppingListSlice';
 
@@ -13,22 +13,25 @@ import shoppingListReducer from './slices/shoppingListSlice';
 const persistConfig = {
   key: 'root',
   storage: AsyncStorage,
-  whitelist: ['shoppingList'], // Only persist the shopping list state
+  version: 1,
 };
 
+// Combine all reducers
+const rootReducer = combineReducers({
+  shoppingList: shoppingListReducer,
+});
+
 // Create a persisted reducer
-const persistedReducer = persistReducer(persistConfig, shoppingListReducer);
+const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 // Configure and create the Redux store
 export const store = configureStore({
-  reducer: {
-    shoppingList: persistedReducer,
-  },
+  reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
         // Ignore these action types for Redux Persist
-        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE', 'persist/REGISTER'],
       },
     }),
 });
